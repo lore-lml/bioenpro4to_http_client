@@ -2,24 +2,23 @@ package request_info
 
 import (
 	"bioenpro4to_http_client/lib/utils"
-	"encoding/json"
-	"errors"
 )
 
 type ChannelAuthorization struct {
-	Cred       interface{} `json:"Cred"`
-	ChannelPsw string           `json:"Channel-psw"`
+	Cred       string `json:"Cred"`
+	ChannelPsw string `json:"Channel-psw"`
 }
 
-func NewChannelAuthorization(cred utils.Credential, channelPsw string) (*ChannelAuthorization, error){
-	var obj interface{}
-	err := json.Unmarshal(cred, &obj)
-	if err != nil{
-		return nil, errors.New("Invalid credential format")
-	}
+func NewChannelAuthorization(cred utils.Credential, channelPsw string) *ChannelAuthorization {
 	return &ChannelAuthorization{
-		Cred: obj,
+		Cred:       string(cred),
 		ChannelPsw: channelPsw,
-	}, nil
+	}
 }
 
+func (self *ChannelAuthorization) ToMap() map[string]string {
+	m := make(map[string]string)
+	m["Cred"] = self.Cred
+	m["Channel-psw"] = self.ChannelPsw
+	return m
+}
