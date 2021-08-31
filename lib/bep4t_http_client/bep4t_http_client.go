@@ -1,8 +1,8 @@
-package bep4t_client
+package bep4t_http_client
 
 import (
-	"bioenpro4to_http_client/lib/bep4t_client/request_info"
-	"bioenpro4to_http_client/lib/bep4t_client/utils"
+	"bioenpro4to_http_client/lib/bep4t_http_client/request_info"
+	"bioenpro4to_http_client/lib/bep4t_http_client/utils"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -15,24 +15,37 @@ import (
 	"time"
 )
 
-type BEP4TClient struct {
+const (
+	authenticateURL    = "id-manager/authenticate"
+	validCredentialURL = "id-manager/is-credential-valid"
+	dailyChannelURL    = "channel-manager/daily-channel"
+)
+
+type Method string
+
+const (
+	httpGet  Method = "GET"
+	httpPost        = "POST"
+)
+
+type BEP4THttpClient struct {
 	BaseUrl    string
 	httpClient *http.Client
 }
 
-func NewBEP4TClient(hostAddr string, port int16, ssl bool) *BEP4TClient {
+func NewBEP4THttpClient(hostAddr string, port int16, ssl bool) *BEP4THttpClient {
 	var secure = ""
 	if ssl {
 		secure = "s"
 	}
 
-	return &BEP4TClient{
+	return &BEP4THttpClient{
 		BaseUrl:    fmt.Sprintf("http%s://%s:%s", secure, hostAddr, strconv.FormatInt(int64(port), 10)),
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
-func (client *BEP4TClient) newRequest(method utils.Method, apiUrl string, body io.Reader) (*http.Request, error) {
+func (client *BEP4THttpClient) newRequest(method Method, apiUrl string, body io.Reader) (*http.Request, error) {
 	url := fmt.Sprintf("%s/%s", client.BaseUrl, apiUrl)
 	req, err := http.NewRequest(string(method), url, body)
 	if err != nil {
@@ -42,8 +55,8 @@ func (client *BEP4TClient) newRequest(method utils.Method, apiUrl string, body i
 	return req, nil
 }
 
-func (client *BEP4TClient) Welcome() {
-	req, err := client.newRequest(utils.Get, "", nil)
+func (client *BEP4THttpClient) Welcome() {
+	req, err := client.newRequest(httpGet, "", nil)
 	if err != nil {
 		fmt.Printf("%s", err)
 		return
@@ -65,13 +78,13 @@ func (client *BEP4TClient) Welcome() {
 	fmt.Printf("%s", body)
 }
 
-func (client *BEP4TClient) GetAuthCredential(actorId, psw, did string) (utils.Credential, error) {
+func (client *BEP4THttpClient) GetAuthCredential(actorId, psw, did string) (utils.Credential, error) {
 	auth, err := json.Marshal(request_info.NewAuthInfo(actorId, psw, did))
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := client.newRequest(utils.Post, utils.Authenticate, bytes.NewBuffer(auth))
+	req, err := client.newRequest(httpPost, authenticateURL, bytes.NewBuffer(auth))
 	if err != nil {
 		return nil, err
 	}
@@ -92,8 +105,8 @@ func (client *BEP4TClient) GetAuthCredential(actorId, psw, did string) (utils.Cr
 	return cred, nil
 }
 
-func (client *BEP4TClient) IsCredentialValid(cred utils.Credential) error {
-	req, err := client.newRequest(utils.Get, utils.ValidCredential, bytes.NewBuffer(cred))
+func (client *BEP4THttpClient) IsCredentialValid(cred utils.Credential) error {
+	req, err := client.newRequest(httpGet, validCredentialURL, bytes.NewBuffer(cred))
 	if err != nil {
 		return err
 	}
@@ -128,7 +141,7 @@ func (client *BEP4TClient) IsCredentialValid(cred utils.Credential) error {
 	return nil
 }
 
-func (client *BEP4TClient) NewDailyActorChannel(cred utils.Credential, channelPsw, date string) error {
+func (client *BEP4THttpClient) NewDailyActorChannel(cred utils.Credential, channelPsw, date string) error {
 	timestamp, err := utils.DateToTimestamp(date)
 	if err != nil {
 		return err
@@ -138,7 +151,7 @@ func (client *BEP4TClient) NewDailyActorChannel(cred utils.Credential, channelPs
 
 	strTimestamp := strconv.FormatInt(timestamp, 10)
 	reqBody := []byte(fmt.Sprintf(`{"day_timestamp": %s}`, strTimestamp))
-	req, err := client.newRequest(utils.Post, utils.DailyChannel, bytes.NewBuffer(reqBody))
+	req, err := client.newRequest(httpPost, dailyChannelURL, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return err
 	}
@@ -163,14 +176,14 @@ func (client *BEP4TClient) NewDailyActorChannel(cred utils.Credential, channelPs
 	return nil
 }
 
-func (client *BEP4TClient) GetDailyActorChannel(cred utils.Credential, channelPsw, date string) (*string, error) {
+func (client *BEP4THttpClient) GetDailyActorChannel(cred utils.Credential, channelPsw, date string) (*string, error) {
 	if !utils.CheckDateFormat(date) {
 		return nil, errors.New("wrong date format")
 	}
 	date = strings.ReplaceAll(date, "/", "-")
 	auth := request_info.NewChannelAuthorization(cred, channelPsw)
 
-	req, err := client.newRequest(utils.Get, fmt.Sprintf("%s/%s", utils.DailyChannel, date), nil)
+	req, err := client.newRequest(httpGet, fmt.Sprintf("%s/%s", dailyChannelURL, date), nil)
 	if err != nil {
 		return nil, err
 	}

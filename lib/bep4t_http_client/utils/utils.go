@@ -8,19 +8,6 @@ import (
 	"time"
 )
 
-const (
-	Authenticate    = "id-manager/authenticate"
-	ValidCredential = "id-manager/is-credential-valid"
-	DailyChannel    = "channel-manager/daily-channel"
-)
-
-type Method string
-
-const (
-	Get  Method = "GET"
-	Post        = "POST"
-)
-
 type Credential []byte
 
 const dateLayout = "02/01/2006 03:04:05 PM"

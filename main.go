@@ -1,8 +1,9 @@
 package main
 
 import (
-	"bioenpro4to_http_client/lib/bep4t_client"
+	"bioenpro4to_http_client/lib/bep4t_http_client"
 	manager "bioenpro4to_http_client/lib/go_channel_manager"
+	idManager "bioenpro4to_http_client/lib/identity_manager"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -23,7 +24,7 @@ func (self *Message) toJson() []byte {
 }
 
 func testBEP4TClient(statePsw string) (*string, error) {
-	client := bep4t_client.NewBEP4TClient("192.168.1.91", 8000, false)
+	client := bep4t_http_client.NewBEP4THttpClient("192.168.1.91", 8000, false)
 	cred, err := client.GetAuthCredential("aa000aa", "ciao", "did:iota:test:HRyXLr22JbT4VYczsFRB3p7T5xnHDReHU78d4Ns7RqAa")
 	if err != nil {
 		fmt.Printf("%s\n", err)
@@ -54,7 +55,7 @@ func testBEP4TClient(statePsw string) (*string, error) {
 	return chanBase64, nil
 }
 
-func main() {
+func testSendMsg() {
 	statePsw := "This is my password"
 	stateBase64, err := testBEP4TClient(statePsw)
 	if err != nil {
@@ -82,4 +83,22 @@ func main() {
 	}
 	fmt.Println("Message Sent: ", string(public))
 	fmt.Println(*msgId)
+}
+
+func main() {
+
+	config := idManager.NewPersistenceConfig("id_manager_backup", "psw")
+	idManager, _ := idManager.NewIdentityManager(false, config)
+	defer idManager.Drop()
+
+	client := bep4t_http_client.NewBEP4THttpClient("192.168.1.91", 8000, false)
+	//cred, _ := client.GetAuthCredential("aa000aa", "ciao", "did:iota:test:HRyXLr22JbT4VYczsFRB3p7T5xnHDReHU78d4Ns7RqAa")
+	//
+	//idManager.StoreCredential("cred1", cred)
+	cred, _ := idManager.GetCredential("cred1")
+	fmt.Println(string(cred))
+	err := client.IsCredentialValid(cred)
+	if err == nil {
+		fmt.Println("Credential is valid")
+	}
 }

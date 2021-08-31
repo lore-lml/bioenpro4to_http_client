@@ -13,3 +13,6 @@ crate-type = ["staticlib", "cdylib"]
 anyhow = { version = "1.0", default-features = false }
 tokio = { version = "1.1", features = ["full"] }
 bioenpro4to_channel_manager = { git = "https://github.com/lore-lml/bioenpro4to_channel_manager.git", branch='dev2'}
+iota_identity_lib = { git="https://github.com/lore-lml/iota-identity-lib.git" }
+serde = { version = "^1.0", features=["derive"] }
+serde_json = "^1.0"

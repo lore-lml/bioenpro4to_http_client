@@ -1,7 +1,7 @@
 package request_info
 
 import (
-	"bioenpro4to_http_client/lib/bep4t_client/utils"
+	"bioenpro4to_http_client/lib/bep4t_http_client/utils"
 )
 
 type ChannelAuthorization struct {
