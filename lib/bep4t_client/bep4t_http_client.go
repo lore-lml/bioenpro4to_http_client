@@ -1,8 +1,8 @@
-package lib
+package bep4t_client
 
 import (
-	"bioenpro4to_http_client/lib/request_info"
-	"bioenpro4to_http_client/lib/utils"
+	"bioenpro4to_http_client/lib/bep4t_client/request_info"
+	"bioenpro4to_http_client/lib/bep4t_client/utils"
 	"bytes"
 	"encoding/json"
 	"errors"

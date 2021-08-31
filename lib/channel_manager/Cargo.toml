@@ -1,0 +1,15 @@
+[package]
+name = "channel_manager"
+version = "0.1.0"
+authors = ["Lorenzo Limoli <lorenzo.limoli@outlook.it>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "c_channel_manager_lib"
+crate-type = ["staticlib", "cdylib"]
+
+[dependencies]
+anyhow = { version = "1.0", default-features = false }
+tokio = { version = "1.1", features = ["full"] }
+bioenpro4to_channel_manager = { git = "https://github.com/lore-lml/bioenpro4to_channel_manager.git", branch='dev2'}
