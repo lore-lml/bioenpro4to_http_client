@@ -2,8 +2,8 @@ package main
 
 import (
 	bep4t_client "bioenpro4to_http_client/lib"
+	"bioenpro4to_http_client/lib/env_configuration"
 	manager "bioenpro4to_http_client/lib/go_channel_manager"
-	idManager "bioenpro4to_http_client/lib/identity_manager"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -24,14 +24,19 @@ func (self *Message) toJson() []byte {
 }
 
 func main() {
-	config := idManager.NewPersistenceConfig("id_manager_backup", "psw")
-	actorId := "aa000aa"
-	//psw := "ciao"
-	channelPsw := "psw"
-	date := "02/09/2021"
+	env, err := env_configuration.InitEnvConfiguration()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-	bep4tClient, err :=
-		bep4t_client.BEP4TClientBuilder().HostAddr("192.168.1.91").Port(8000).MainNet(false).PersistenceConfig(config).Build()
+	config := env.IdentityConfig
+	actorId := env.ActorId
+	actorAuthPsw := env.ActorAuthPsw
+	channelPsw := env.ActorChannelPsw
+	date := "03/09/2021"
+
+	bep4tClient, err := bep4t_client.BEP4TClientBuilder().HostAddr(env.HostAddr).Port(env.HostPort).MainNet(env.Mainnet).PersistenceConfig(config).Build()
 	defer bep4tClient.Drop()
 
 	if err != nil {
@@ -45,13 +50,20 @@ func main() {
 		return
 	}
 
-	//err = bep4tClient.Authenticate(actorId, psw)
-	//if err != nil{
-	//	fmt.Println(err)
-	//	return
-	//}
+	err = bep4tClient.Authenticate(actorId, actorAuthPsw)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	fmt.Println(bep4tClient.IsAuthenticated(actorId))
+
+	err = bep4tClient.NewDailyChannel(actorId, channelPsw, date)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	err = bep4tClient.RestoreDailyChannel(actorId, channelPsw, date)
 	if err != nil {
 		fmt.Println(err)

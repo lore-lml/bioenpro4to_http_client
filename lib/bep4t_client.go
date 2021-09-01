@@ -77,6 +77,12 @@ func (self *BEP4TClient) NewDailyChannel(actorId, channelPsw, date string) error
 }
 
 func (self *BEP4TClient) RestoreDailyChannel(actorId, channelPsw, date string) error {
+	key := fmt.Sprintf("%s:%s", actorId, strings.ReplaceAll(date, "-", "/"))
+	_, ok := self.channels[key]
+	if ok {
+		return nil
+	}
+
 	cred, err := self.identityManager.GetCredential(actorId, "ch-auth")
 	if err != nil {
 		return err
@@ -92,7 +98,6 @@ func (self *BEP4TClient) RestoreDailyChannel(actorId, channelPsw, date string) e
 		return err
 	}
 
-	key := fmt.Sprintf("%s:%s", actorId, strings.ReplaceAll(date, "-", "/"))
 	self.channels[key] = dailyCh
 
 	return nil
