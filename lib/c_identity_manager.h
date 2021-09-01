@@ -16,8 +16,8 @@ extern identity_manager_t *new_identity_manager(int mainnet, int persistence, ch
 extern void drop_identity_manager(identity_manager_t *);
 extern char const *create_identity(identity_manager_t *, char const *);
 extern char const *get_identity_did(identity_manager_t *, char const *);
-extern int store_credential(identity_manager_t *, char const *, credential_t const *);
-extern credential_t *get_credential(identity_manager_t *, char const *);
+extern int store_credential(identity_manager_t *, char const *id_name, char const *cred_name, credential_t const *);
+extern credential_t *get_credential(identity_manager_t *, char const *id_name, char const *cred_name);
 extern void drop_str(char *);
 
 

@@ -48,7 +48,7 @@ func (ch *DailyChannel) Drop() {
 	C.drop_daily_channel_manager(ch.channel)
 }
 
-func (ch *DailyChannel) SendRawPacket(packet *RawPacket, keyNonce *KeyNonce) (*string, error) {
+func (ch *DailyChannel) SendRawPacket(packet *RawPacket, keyNonce *KeyNonce) (string, error) {
 	var kn *C.key_nonce_t = nil
 	if keyNonce != nil {
 		kn = keyNonce.toCKeyNonce()
@@ -60,21 +60,21 @@ func (ch *DailyChannel) SendRawPacket(packet *RawPacket, keyNonce *KeyNonce) (*s
 
 	cMsgId := C.send_raw_packet(ch.channel, pack, kn)
 	if cMsgId == nil {
-		return nil, errors.New("something wrong during sending the packet")
+		return "", errors.New("something wrong during sending the packet")
 	}
 	defer C.drop_str(cMsgId)
 	msgId := C.GoString(cMsgId)
-	return &msgId, nil
+	return msgId, nil
 }
 
-func (ch *DailyChannel) ChannelInfo() ChannelInfo {
+func (ch *DailyChannel) ChannelInfo() *ChannelInfo {
 	info := C.daily_channel_info(ch.channel)
 	defer C.drop_channel_info(info)
 	return NewChannelInfo(C.GoString(info.channel_id), C.GoString(info.announce_id))
 }
 
-func NewChannelInfo(channelId, announceId string) ChannelInfo {
-	return ChannelInfo{ChannelId: channelId, AnnounceId: announceId}
+func NewChannelInfo(channelId, announceId string) *ChannelInfo {
+	return &ChannelInfo{ChannelId: channelId, AnnounceId: announceId}
 }
 
 func NewEncryptionKeyNonce(key, nonce string) *KeyNonce {

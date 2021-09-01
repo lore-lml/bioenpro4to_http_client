@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bioenpro4to_http_client/lib/bep4t_http_client"
+	bep4t_client "bioenpro4to_http_client/lib"
 	manager "bioenpro4to_http_client/lib/go_channel_manager"
 	idManager "bioenpro4to_http_client/lib/identity_manager"
 	"encoding/json"
@@ -23,82 +23,53 @@ func (self *Message) toJson() []byte {
 	return res
 }
 
-func testBEP4TClient(statePsw string) (*string, error) {
-	client := bep4t_http_client.NewBEP4THttpClient("192.168.1.91", 8000, false)
-	cred, err := client.GetAuthCredential("aa000aa", "ciao", "did:iota:test:HRyXLr22JbT4VYczsFRB3p7T5xnHDReHU78d4Ns7RqAa")
-	if err != nil {
-		fmt.Printf("%s\n", err)
-		return nil, err
-	}
-	fmt.Printf("%s\n", cred)
-
-	err = client.IsCredentialValid(cred)
-	if err == nil {
-		fmt.Println("Credential is Valid")
-	} else {
-		fmt.Printf("%s\n", err)
-	}
-
-	err = client.NewDailyActorChannel(cred, statePsw, "01/09/2021")
-	if err != nil {
-		fmt.Printf("%s\n", err)
-	} else {
-		fmt.Println("Channel Created")
-	}
-
-	chanBase64, err := client.GetDailyActorChannel(cred, statePsw, "01/09/2021")
-	if err != nil {
-		fmt.Printf("%s", err)
-		return nil, err
-	}
-	fmt.Printf("%s\n", *chanBase64)
-	return chanBase64, nil
-}
-
-func testSendMsg() {
-	statePsw := "This is my password"
-	stateBase64, err := testBEP4TClient(statePsw)
-	if err != nil {
-		return
-	}
-
-	dailyCh, err := manager.NewDailyChannel(*stateBase64, statePsw)
-	if err != nil {
-		fmt.Printf("%s\n", err)
-		return
-	}
-	defer dailyCh.Drop()
-	info := dailyCh.ChannelInfo()
-	fmt.Printf("\n%s:%s\n\n\n", info.ChannelId, info.AnnounceId)
-
-	keyNonce := manager.NewEncryptionKeyNonce("This is a secret key", "This is a secret nonce")
-	public := newMessage("This is a public Message").toJson()
-	private := newMessage("This is a private Message").toJson()
-
-	packet := manager.NewRawPacket(public, private)
-	msgId, err := dailyCh.SendRawPacket(packet, keyNonce)
-	if err != nil {
-		fmt.Printf("%s\n", err)
-		return
-	}
-	fmt.Println("Message Sent: ", string(public))
-	fmt.Println(*msgId)
-}
-
 func main() {
-
 	config := idManager.NewPersistenceConfig("id_manager_backup", "psw")
-	idManager, _ := idManager.NewIdentityManager(false, config)
-	defer idManager.Drop()
+	actorId := "aa000aa"
+	//psw := "ciao"
+	channelPsw := "psw"
+	date := "02/09/2021"
 
-	client := bep4t_http_client.NewBEP4THttpClient("192.168.1.91", 8000, false)
-	//cred, _ := client.GetAuthCredential("aa000aa", "ciao", "did:iota:test:HRyXLr22JbT4VYczsFRB3p7T5xnHDReHU78d4Ns7RqAa")
-	//
-	//idManager.StoreCredential("cred1", cred)
-	cred, _ := idManager.GetCredential("cred1")
-	fmt.Println(string(cred))
-	err := client.IsCredentialValid(cred)
-	if err == nil {
-		fmt.Println("Credential is valid")
+	bep4tClient, err :=
+		bep4t_client.BEP4TClientBuilder().HostAddr("192.168.1.91").Port(8000).MainNet(false).PersistenceConfig(config).Build()
+	defer bep4tClient.Drop()
+
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
+
+	_, err = bep4tClient.GetIdentityDid(actorId)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	//err = bep4tClient.Authenticate(actorId, psw)
+	//if err != nil{
+	//	fmt.Println(err)
+	//	return
+	//}
+
+	fmt.Println(bep4tClient.IsAuthenticated(actorId))
+	err = bep4tClient.RestoreDailyChannel(actorId, channelPsw, date)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	info, _ := bep4tClient.InfoOfChannel(actorId, date)
+	fmt.Printf("%s:%s\n", info.ChannelId, info.AnnounceId)
+
+	//keyNonce := manager.NewEncryptionKeyNonce("This is a secret key", "This is a secret nonce")
+	public := newMessage("This is a public Message").toJson()
+	//private := newMessage("This is a private Message").toJson()
+	packet := manager.NewRawPacket(public, nil)
+
+	msgId, err := bep4tClient.SendRawPacketToChannel(actorId, date, packet, nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(msgId)
 }

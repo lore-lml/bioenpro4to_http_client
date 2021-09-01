@@ -73,23 +73,25 @@ func (self *IdentityManager) GetIdentityDid(identityName string) (string, error)
 	return C.GoString(cDid), nil
 }
 
-func (self *IdentityManager) StoreCredential(credName string, cred utils.Credential) error {
+func (self *IdentityManager) StoreCredential(identityName, credName string, cred utils.Credential) error {
+	cIdName := C.CString(identityName)
 	cCredName := C.CString(credName)
 	cCred := C.new_ccredential(C.CString(string(cred)))
 	if cCred == nil {
 		return errors.New("error during credential parsing")
 	}
 	defer C.drop_ccredential(cCred)
-	res := int(C.store_credential(self.manager, cCredName, cCred))
+	res := int(C.store_credential(self.manager, cIdName, cCredName, cCred))
 	if res == 0 {
 		return errors.New(fmt.Sprintf("credential with name %s already exists", credName))
 	}
 	return nil
 }
 
-func (self *IdentityManager) GetCredential(credName string) (utils.Credential, error) {
+func (self *IdentityManager) GetCredential(identityName, credName string) (utils.Credential, error) {
+	cIdName := C.CString(identityName)
 	cCredName := C.CString(credName)
-	cCred := C.get_credential(self.manager, cCredName)
+	cCred := C.get_credential(self.manager, cIdName, cCredName)
 	if cCred == nil {
 		return nil, errors.New(fmt.Sprintf("credential with name %s not found", credName))
 	}

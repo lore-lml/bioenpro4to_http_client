@@ -176,16 +176,16 @@ func (client *BEP4THttpClient) NewDailyActorChannel(cred utils.Credential, chann
 	return nil
 }
 
-func (client *BEP4THttpClient) GetDailyActorChannel(cred utils.Credential, channelPsw, date string) (*string, error) {
+func (client *BEP4THttpClient) GetDailyActorChannel(cred utils.Credential, channelPsw, date string) (string, error) {
 	if !utils.CheckDateFormat(date) {
-		return nil, errors.New("wrong date format")
+		return "", errors.New("wrong date format")
 	}
 	date = strings.ReplaceAll(date, "/", "-")
 	auth := request_info.NewChannelAuthorization(cred, channelPsw)
 
 	req, err := client.newRequest(httpGet, fmt.Sprintf("%s/%s", dailyChannelURL, date), nil)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	for key, value := range auth.ToMap() {
@@ -194,16 +194,16 @@ func (client *BEP4THttpClient) GetDailyActorChannel(cred utils.Credential, chann
 
 	res, err := client.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	if res.StatusCode > 299 {
-		return nil, errors.New(string(body))
+		return "", errors.New(string(body))
 	}
 
 	js := struct {
@@ -211,8 +211,8 @@ func (client *BEP4THttpClient) GetDailyActorChannel(cred utils.Credential, chann
 	}{ChannelBase64: ""}
 	err = json.Unmarshal(body, &js)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return &js.ChannelBase64, nil
+	return js.ChannelBase64, nil
 }

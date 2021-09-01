@@ -104,14 +104,15 @@ pub unsafe extern "C" fn get_identity_did(identity_manager: *mut IdentityManager
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn store_credential(identity_manager: *mut IdentityManager, cred_name: *const c_char, cred: *const CCredential) -> usize{
-    let (manager, cred, cred_name) = match (
+pub unsafe extern "C" fn store_credential(identity_manager: *mut IdentityManager, identity_name: *const c_char, cred_name: *const c_char, cred: *const CCredential) -> usize{
+    let (manager, cred, identity_name, cred_name) = match (
         identity_manager.as_mut(),
         cred.as_ref(),
+        CStr::from_ptr(identity_name).to_str(),
         CStr::from_ptr(cred_name).to_str()
     ){
-        (Some(manager), Some(cred), Ok(cred_name)) => (manager, cred, cred_name),
-        (_, _, _) => return 0
+        (Some(manager), Some(cred), Ok(id_name), Ok(cred_name)) => (manager, cred, id_name, cred_name),
+        (_, _, _, _) => return 0
     };
 
     let cred = match cred.to_credential(){
@@ -119,18 +120,22 @@ pub unsafe extern "C" fn store_credential(identity_manager: *mut IdentityManager
         Err(_) => return 0
     };
 
-    manager.store_credential(cred_name, &cred);
-    1
+    manager.store_credential(identity_name, cred_name, &cred)
+        .map_or(0, |_| 1)
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn get_credential(identity_manager: *mut IdentityManager, cred_name: *const c_char) -> *const CCredential{
-    let (manager, cred_name) = match (identity_manager.as_mut(), CStr::from_ptr(cred_name).to_str()){
-        (Some(manager), Ok(cred)) => (manager, cred),
-        (_, _) => return null()
+pub unsafe extern "C" fn get_credential(identity_manager: *mut IdentityManager, identity_name: *const c_char, cred_name: *const c_char) -> *const CCredential{
+    let (manager, identity_name, cred_name) = match (
+        identity_manager.as_mut(),
+        CStr::from_ptr(identity_name).to_str(),
+        CStr::from_ptr(cred_name).to_str()
+    ){
+        (Some(manager), Ok(id_name), Ok(cred)) => (manager, id_name, cred),
+        (_, _, _) => return null()
     };
 
-    manager.get_credential(cred_name)
+    manager.get_credential(identity_name, cred_name)
         .map_or(
             null(),
             |c| CCredential::from_credential(c).map_or(null(), |c| Box::into_raw(Box::new(c)))
