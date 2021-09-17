@@ -41,7 +41,7 @@ func NewBEP4THttpClient(hostAddr string, port int16, ssl bool) *BEP4THttpClient 
 
 	return &BEP4THttpClient{
 		BaseUrl:    fmt.Sprintf("http%s://%s:%s", secure, hostAddr, strconv.FormatInt(int64(port), 10)),
-		httpClient: &http.Client{Timeout: 30 * time.Second},
+		httpClient: &http.Client{Timeout: 90 * time.Second},
 	}
 }
 

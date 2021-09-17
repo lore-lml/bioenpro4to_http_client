@@ -34,7 +34,7 @@ func main() {
 	actorId := env.ActorId
 	actorAuthPsw := env.ActorAuthPsw
 	channelPsw := env.ActorChannelPsw
-	date := "03/09/2021"
+	date := "17/09/2021"
 
 	bep4tClient, err := bep4t_client.BEP4TClientBuilder().HostAddr(env.HostAddr).Port(env.HostPort).MainNet(env.Mainnet).PersistenceConfig(config).Build()
 	defer bep4tClient.Drop()
@@ -44,7 +44,7 @@ func main() {
 		return
 	}
 
-	_, err = bep4tClient.GetIdentityDid(actorId)
+	_, err = bep4tClient.CreateIdentity(actorId)
 	if err != nil {
 		fmt.Println(err)
 		return
